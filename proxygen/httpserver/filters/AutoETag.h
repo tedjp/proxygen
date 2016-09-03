@@ -1,5 +1,7 @@
 #pragma once
 
+#include <folly/SpookyHashV2.h>
+
 #include <proxygen/httpserver/Filters.h>
 
 namespace proxygen {
@@ -17,6 +19,8 @@ private:
     bool skip_;
     HTTPMessage msg_;
     std::unique_ptr<folly::IOBuf> body_;
+
+    folly::hash::SpookyHashV2 hasher_;
 };
 
 }
