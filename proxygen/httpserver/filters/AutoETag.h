@@ -17,9 +17,13 @@ namespace proxygen {
  * sending the response. If your objects are too big for that to be reasonable,
  * it's best to calculate your own ETag for the object and send that. If you
  * have already set an ETag header by the time the AutoETag filter receives the
- * response headers, it will patch itself out of the response chain and have no
- * effect.  FIXME: Maybe callers still want the If-None-Match behavior!!!
- * - Bring back the skip variable I suppose.
+ * response headers, it will patch itself out of the response chain rather than
+ * unnecessarily buffering everything. It will still send a 304 Not Modified
+ * response if the request contained a matching If-None-Match request header.
+ *
+ * AutoETag will also be disabled for responses that are explicitly chunked by
+ * preceding handlers to avoid delaying delivery of each chunk.
+ * XXX: Option to override?
  *
  * Usage: There are two ways to use the AutoETag filter. Either on a
  * per-handler basis, or globally for all handlers.

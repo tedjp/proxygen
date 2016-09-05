@@ -38,6 +38,7 @@ void AutoETag::sendHeaders(HTTPMessage& msg) noexcept {
     HTTPHeaders& headers = msg.getHeaders();
 
     if (msg.getIsChunked() || headers.exists(HTTP_HEADER_ETAG)) {
+        // FIXME: Do the If-None-Match 304 Not Modified processing here.
         // Patch this handler out of the chain.
         upstream_->setResponseHandler(downstream_);
         downstream_->sendHeaders(msg);
