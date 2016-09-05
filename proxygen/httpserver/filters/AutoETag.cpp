@@ -7,12 +7,7 @@
 namespace proxygen {
 
 AutoETag::AutoETag(RequestHandler *upstream):
-    Filter(upstream),
-    skip_(false),
-    msg_(),
-    body_(),
-    if_none_match_(),
-    hasher_()
+    Filter(upstream)
 {
 }
 
@@ -84,7 +79,7 @@ void AutoETag::sendEOM() noexcept {
 
     bool sendBody = true;
 
-    if (etagMatchesIfNoneMatch(etag)) {
+    if (etagMatches(etag, if_none_match_)) {
         msg_.setStatusCode(304);
         msg_.setStatusMessage("Not Modified");
         headers.remove(HTTP_HEADER_CONTENT_LENGTH);
@@ -101,9 +96,9 @@ void AutoETag::sendEOM() noexcept {
     downstream_->sendEOM();
 }
 
-bool AutoETag::etagMatchesIfNoneMatch(const std::string& etag) const noexcept {
-    for (const auto& header: if_none_match_) {
-        if (header == etag || header == "*")
+bool AutoETag::etagMatches(const std::string& etag, const std::vector<std::string>& etags) noexcept {
+    for (const auto& tag: etags) {
+        if (tag == etag || tag == "*")
             return true;
     }
 

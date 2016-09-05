@@ -22,12 +22,12 @@ public:
     void sendBody(std::unique_ptr<folly::IOBuf> body) noexcept override;
     void sendEOM() noexcept override;
 
-    bool etagMatchesIfNoneMatch(const std::string& etag) const noexcept;
+    static bool etagMatches(const std::string& etag, const std::vector<std::string>& etags) noexcept;
 
 private:
     // XXX: Is it possible to patch ourself out of the response chain
     // for this particular response?!
-    bool skip_;
+    bool skip_{false};
     HTTPMessage msg_;
     std::unique_ptr<folly::IOBuf> body_;
     std::vector<std::string> if_none_match_;
