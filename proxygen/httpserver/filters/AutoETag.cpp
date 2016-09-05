@@ -30,7 +30,7 @@ void AutoETag::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
                     folly::split(std::string(","), value, tags, true);
                     for (const std::string& tag: tags) {
                         folly::StringPiece trimmed = folly::trimWhitespace(folly::StringPiece(tag));
-                        if_none_match_.emplace_back(std::string(trimmed.begin(), trimmed.end()));
+                        if_none_match_.emplace_back(trimmed.begin(), trimmed.end());
                     }
                 }
                 return false;
