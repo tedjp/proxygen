@@ -38,7 +38,8 @@ void AutoETag::sendHeaders(HTTPMessage& msg) noexcept {
     HTTPHeaders& headers = msg.getHeaders();
 
     if (msg.getIsChunked() || headers.exists(HTTP_HEADER_ETAG)) {
-        skip_ = true;
+        // Patch this handler out of the chain.
+        upstream_->setResponseHandler(downstream_);
         downstream_->sendHeaders(msg);
         return;
     }
@@ -49,11 +50,6 @@ void AutoETag::sendHeaders(HTTPMessage& msg) noexcept {
 }
 
 void AutoETag::sendBody(std::unique_ptr<folly::IOBuf> body) noexcept {
-    if (skip_) {
-        downstream_->sendBody(std::move(body));
-        return;
-    }
-
     hasher_.Update(body->data(), body->length());
 
     if (body_)
@@ -63,11 +59,6 @@ void AutoETag::sendBody(std::unique_ptr<folly::IOBuf> body) noexcept {
 }
 
 void AutoETag::sendEOM() noexcept {
-    if (skip_) {
-        downstream_->sendEOM();
-        return;
-    }
-
     uint64_t hash1, hash2;
     hasher_.Final(&hash1, &hash2);
 
