@@ -85,8 +85,8 @@ void AutoETag::sendEOM() noexcept {
     bool sendBody = true;
 
     if (etagMatchesIfNoneMatch(etag)) {
-        // Send 304 Not Modified
         msg_.setStatusCode(304);
+        msg_.setStatusMessage("Not Modified");
         sendBody = false;
     }
 
