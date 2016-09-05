@@ -58,6 +58,7 @@ private:
 };
 
 class AutoETagFilterFactory : public RequestHandlerFactory {
+public:
     void onServerStart(folly::EventBase* evb) noexcept override {}
     void onServerStop() noexcept override {}
 
