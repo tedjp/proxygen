@@ -87,6 +87,7 @@ void AutoETag::sendEOM() noexcept {
     if (etagMatchesIfNoneMatch(etag)) {
         msg_.setStatusCode(304);
         msg_.setStatusMessage("Not Modified");
+        headers.remove(HTTP_HEADER_CONTENT_LENGTH);
         sendBody = false;
     }
 
