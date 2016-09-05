@@ -11,8 +11,32 @@ AutoETag::AutoETag(RequestHandler *upstream):
     skip_(false),
     msg_(),
     body_(),
+    if_none_match_(),
     hasher_()
 {
+}
+
+void AutoETag::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
+    const auto& h = headers->getHeaders();
+
+    if_none_match_.reserve(h.getNumberOfValues(HTTP_HEADER_IF_NONE_MATCH));
+
+    h.forEachValueOfHeader(HTTP_HEADER_IF_NONE_MATCH,
+            [&if_none_match_ = this->if_none_match_](const std::string& value) -> bool {
+                if (value.find(',') == std::string::npos) {
+                    if_none_match_.push_back(value);
+                } else {
+                    std::vector<std::string> tags;
+                    folly::split(std::string(","), value, tags, true);
+                    for (const std::string& tag: tags) {
+                        folly::StringPiece trimmed = folly::trimWhitespace(folly::StringPiece(tag));
+                        if_none_match_.emplace_back(std::string(trimmed.begin(), trimmed.end()));
+                    }
+                }
+                return false;
+            });
+
+    upstream_->onRequest(std::move(headers));
 }
 
 void AutoETag::sendHeaders(HTTPMessage& msg) noexcept {
@@ -57,11 +81,32 @@ void AutoETag::sendEOM() noexcept {
     folly::stringAppendf(&etag, "%016" PRIx64 "\"", hash2);
 
     HTTPHeaders& headers = msg_.getHeaders();
+
+    bool sendBody = true;
+
+    if (etagMatchesIfNoneMatch(etag)) {
+        // Send 304 Not Modified
+        msg_.setStatusCode(304);
+        sendBody = false;
+    }
+
     headers.set(HTTP_HEADER_ETAG, etag);
 
     downstream_->sendHeaders(msg_);
-    downstream_->sendBody(std::move(body_));
+
+    if (sendBody)
+        downstream_->sendBody(std::move(body_));
+
     downstream_->sendEOM();
+}
+
+bool AutoETag::etagMatchesIfNoneMatch(const std::string& etag) const noexcept {
+    for (const auto& header: if_none_match_) {
+        if (header == etag || header == "*")
+            return true;
+    }
+
+    return false;
 }
 
 }
