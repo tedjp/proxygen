@@ -23,7 +23,6 @@ namespace proxygen {
  *
  * AutoETag will also be disabled for responses that are explicitly chunked by
  * preceding handlers to avoid delaying delivery of each chunk.
- * XXX: Option to override?
  *
  * Usage: There are two ways to use the AutoETag filter. Either on a
  * per-handler basis, or globally for all handlers.
