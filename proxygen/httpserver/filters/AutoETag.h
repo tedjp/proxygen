@@ -38,8 +38,7 @@ namespace proxygen {
  *
  *   MyHandlerFactory::onRequest() {
  *     auto myHandler = new MyHandler();
- *     auto autoETag = new proxygen::AutoETag(myHandler);
- *     return autoETag;
+ *     return new proxygen::AutoETag(myHandler);
  *   }
  *
  * To enable AutoETag on all requests, add it to the handler factory chain:
