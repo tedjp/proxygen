@@ -30,8 +30,15 @@ namespace proxygen {
  * preceding handlers to avoid delaying delivery of each chunk.
  *
  * Usage:
- * There are two ways to use the AutoETag filter. Either on a
- * per-handler basis, or globally for all handlers.
+ * There are two ways to use the AutoETag filter. Either globally for all
+ * handlers or on a per-handler basis.
+ *
+ * To enable AutoETag on all requests, add it to the handler factory chain:
+ *   HTTPOptions options;
+ *   options.handlerFactories = RequestHandlerChain()
+ *     .addThen<AutoETagFilterFactory>()
+ *     .addThen<MyHandlerFilterFactory()
+ *     .build();
  *
  * To enable AutoETag on a per-handler basis, add it after constructing your
  * handler in the handler factory:
@@ -40,13 +47,6 @@ namespace proxygen {
  *     auto myHandler = new MyHandler();
  *     return new proxygen::AutoETag(myHandler);
  *   }
- *
- * To enable AutoETag on all requests, add it to the handler factory chain:
- *   HTTPOptions options;
- *   options.handlerFactories = RequestHandlerChain()
- *     .addThen<AutoETagFilterFactory>()
- *     .addThen<MyHandlerFilterFactory()
- *     .build();
  *
  * BUGS:
  * - Unknown interaction with the ZlibServerFilter. The ZlibServerFilter
