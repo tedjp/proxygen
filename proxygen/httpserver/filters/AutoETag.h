@@ -14,20 +14,40 @@ namespace proxygen {
  * that is unchanged.
  *
  * It operates by caching the entire response in memory and hashing it before
- * sending the response. If your objects are too big for that to be reasonable,
- * it's best to calculate your own ETag for the object and send that. If you
- * have already set an ETag header by the time the AutoETag filter receives the
- * response headers, it will patch itself out of the response chain rather than
- * unnecessarily buffering everything. It will still send a 304 Not Modified
- * response if the request contained a matching If-None-Match request header.
+ * sending the response. Once the ETag has been calculated, the request is
+ * checked for If-None-Match conditional request headers. If any of the
+ * entity-tags in the If-None-Match header match, a 304 Not Modified response
+ * is sent and the message body is dropped.
+ *
+ * If your objects are large enough that caching them entirely in memory before
+ * sending the response is excessive, it's best to calculate your own ETag
+ * and include it in sendHeaders(). In that case AutoETag will provide the
+ * conditonal response behavior as above, but if the client request does not
+ * match the ETag then AutoETag removes itself from the response chain
+ * altogether.
  *
  * AutoETag will also be disabled for responses that are explicitly chunked by
  * preceding handlers to avoid delaying delivery of each chunk.
  *
- * Usage: There are two ways to use the AutoETag filter. Either on a
+ * Usage:
+ * There are two ways to use the AutoETag filter. Either on a
  * per-handler basis, or globally for all handlers.
  *
- * TODO: Examples.
+ * To enable AutoETag on a per-handler basis, add it after constructing your
+ * handler in the handler factory:
+ *
+ *   MyHandlerFactory::onRequest() {
+ *     auto myHandler = new MyHandler();
+ *     auto autoETag = new proxygen::AutoETag(myHandler);
+ *     return autoETag;
+ *   }
+ *
+ * To enable AutoETag on all requests, add it to the handler factory chain:
+ *   HTTPOptions options;
+ *   options.handlerFactories = RequestHandlerChain()
+ *     .addThen<AutoETagFilterFactory>()
+ *     .addThen<MyHandlerFilterFactory()
+ *     .build();
  *
  * BUGS:
  * - Unknown interaction with the ZlibServerFilter. The ZlibServerFilter
@@ -47,7 +67,10 @@ public:
     void sendBody(std::unique_ptr<folly::IOBuf> body) noexcept override;
     void sendEOM() noexcept override;
 
+protected:
     static bool etagMatches(const std::string& etag, const std::vector<std::string>& etags) noexcept;
+
+    virtual void send304NotModified(const std::string& etag) noexcept;
 
 private:
     // Request
